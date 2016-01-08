@@ -1077,7 +1077,7 @@ double ZPalet(double z)
 {
 	double a,b,f;
 	a = -2.0*xmax - dCentral;
-	b = 1*xmax - dCentral;
+	b = 0.5*xmax - dCentral;
 
 	if(z < a)
 		f = 0;
@@ -1085,9 +1085,7 @@ double ZPalet(double z)
 		f = (z - a)/(b-a);
 	if(z > b)
 		f = 1;
-//	return f;
-	return 1;
-
+	return f;
 }
 
 
