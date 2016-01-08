@@ -306,22 +306,19 @@ POINT3 Point[8];
 //начальные точки линий поля
 POINT3 PointB[1000];
 
-//добро пожаловать в ад
-
-//первый заряд
-double qForce1 = 3;
-POINT3 q1;
-
-//второй заряд
-double qForce2 = -1;
-POINT3 q2;
-
 //структура 3D-вектора
 struct VECTORS {
 	double x, y, z;
 	double dx, dy, dz;
 };
 
+const int QUANTS_COUNT = 3;
+
+struct QUANTS
+{
+	POINT3 coords;
+	double force;
+};
 
 //структура вектора магнитного поля
 struct VECMAG {
@@ -360,6 +357,7 @@ double xmax, ymax, zmax;
 //размеры магнитной пластинки
 double ax, ay, az;
 
+QUANTS qs[QUANTS_COUNT];
 
 //задаем различные параметры в начале работы приложения
 void LineCreate()
@@ -385,36 +383,40 @@ void LineCreate()
 	Px[2] =  -ax;  Py[2] =  -ay;  Pz[2] =  az;
 	Px[3] =   ax;  Py[3] =  -ay;  Pz[3] =  -az;
 
-	q1.x = 0.1;
-	q1.y = 1;
-	q1.z = 1.5;
 
-	q2.x = 0.0;
-	q2.y = 0.0;
-	q2.z = -1;
-	
+	qs[0].coords.x = 2;
+	qs[0].coords.y = 0;
+	qs[0].coords.z = 0;
+	qs[0].force = 1;
+
+	qs[1].coords.x = 0;
+	qs[1].coords.y = 2;
+	qs[1].coords.z = 0;
+	qs[1].force = 1;
+
+	qs[2].coords.x = 0.0;
+	qs[2].coords.y = -2;
+	qs[2].coords.z = 0;
+	qs[2].force = 1;
+
 
 	int i;
 	double Radius = 0.2;
-	for (i = 0; i < 20; i++)
+
+	for (i = 0; i < QUANTS_COUNT; i++)
 	{
-		double randomR = 2*Radius* (double)rand() / RAND_MAX - Radius;
-		double randomPhi = 2 * M_PI* (double)rand() / RAND_MAX;
-		double theta = asin(randomR / Radius);
-		PointB[i].x = Radius*cos(theta)*cos(randomPhi) + q1.x;
-		PointB[i].y = Radius*cos(theta)*sin(randomPhi) + q1.y;
-		PointB[i].z = randomR + q1.z;
+		int j;
+		for (j = 0; j < 20; j++)
+		{
+			double randomR = 2 * Radius* (double)rand() / RAND_MAX - Radius;
+			double randomPhi = 2 * M_PI* (double)rand() / RAND_MAX;
+			double theta = asin(randomR / Radius);
+			PointB[j+i*20].x = Radius*cos(theta)*cos(randomPhi) + qs[i].coords.x;
+			PointB[j + i * 20].y = Radius*cos(theta)*sin(randomPhi) + qs[i].coords.y;
+			PointB[j + i * 20].z = randomR + qs[i].coords.z;
+		}
 	}
 
-	for (i = 20; i < 40; i++)
-	{
-		double randomR = 2 * Radius* (double)rand() / RAND_MAX - Radius;
-		double randomPhi = 2 * M_PI* (double)rand() / RAND_MAX;
-		double theta = asin(randomR / Radius);
-		PointB[i].x = Radius*cos(theta)*cos(randomPhi) + q2.x;
-		PointB[i].y = Radius*cos(theta)*sin(randomPhi) + q2.y;
-		PointB[i].z = randomR + q2.z;
-	}
 
 //начальные значения углов поворота системы координат
 	angl.fi = 30; angl.teta = 60;
@@ -439,37 +441,39 @@ void	PointCorns()
 VECMAG magn(double x, double y, double z)
 {
 	VECMAG mag;
+	mag.hx = 0;
+	mag.hy = 0;
+	mag.hz = 0;
 
-	double deltaX = x - q1.x;
-	double deltaY = y - q1.y;
-	double deltaZ = z - q1.z;
+	double deltaX;
+	double deltaY;
+	double deltaZ;
 
-	double znamenatelPartOne = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
-	double znamentelPartTwo = znamenatelPartOne*znamenatelPartOne*znamenatelPartOne;
-	double znamenatel = sqrt(znamentelPartTwo);
+	double znamenatelPartOne;
+	double znamentelPartTwo;
+	double znamenatel;
+	
+	int i;
 
-	mag.hx =
-			 (deltaX/znamenatel)*qForce1;
-	mag.hy =
-		(deltaY / znamenatel)*qForce1;
-	mag.hz =
-		(deltaZ / znamenatel)*qForce1;
+	for (i = 0; i < 2; i++)
+	{
 
-	///
-	deltaX = x - q2.x;
-	deltaY = y - q2.y;
-	deltaZ = z - q2.z;
+		deltaX = x - qs[i].coords.x;
+		deltaY = y - qs[i].coords.y;
+		deltaZ = z - qs[i].coords.z;
 
-	znamenatelPartOne = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
-	znamentelPartTwo = znamenatelPartOne*znamenatelPartOne*znamenatelPartOne;
-	znamenatel = sqrt(znamentelPartTwo);
+		znamenatelPartOne = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
+		znamentelPartTwo = znamenatelPartOne*znamenatelPartOne*znamenatelPartOne;
+		znamenatel = sqrt(znamentelPartTwo);
 
-	mag.hx +=
-		(deltaX / znamenatel)*qForce2;
-	mag.hy +=
-		(deltaY / znamenatel)*qForce2;
-	mag.hz +=
-		(deltaZ / znamenatel)*qForce2;
+		mag.hx +=
+			(deltaX / znamenatel)*qs[i].force;
+		mag.hy +=
+			(deltaY / znamenatel)*qs[i].force;
+		mag.hz +=
+			(deltaZ / znamenatel)*qs[i].force;
+
+	}
 
 	return mag;
 }
@@ -624,8 +628,7 @@ void LineField(HDC hdc,POINT3 PointB,COLORREF rgb, double force)
 		}
 
 	//прекращаем рисовать линию поля на границе куба
-	} while (step<1000&&(x>-xmax) && (x<xmax) && (y>-ymax) && (y<ymax) && (z>-zmax) && (z<zmax) && ((abs(x - q1.x) > 0.01) || (abs(y - q1.y) > 0.01) || (abs(z - q1.z) > 0.01))
-		&& ((abs(x - q2.x) > 0.01) || (abs(y - q2.y) > 0.01) || (abs(z - q2.z) > 0.01)));
+	} while (step < 1000 && (x>-xmax) && (x<xmax) && (y>-ymax) && (y<ymax) && (z>-zmax) && (z<zmax));
 }
 
 
@@ -763,8 +766,14 @@ void LinePicture(HWND hwnd, int Context)
 	
 	for(int i=20; i<40; i++)
 	{
-		LineField(hdc,PointB[i],RGB(0,0,255), -1);
+		LineField(hdc,PointB[i],RGB(0,0,255), 1);
 		
+	}
+
+	for (int i = 40; i<60; i++)
+	{
+		LineField(hdc, PointB[i], RGB(0, 255,0), 1);
+
 	}
 	
 //-----------------------------------------------------------------------
