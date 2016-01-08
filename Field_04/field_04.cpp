@@ -306,6 +306,16 @@ POINT3 Point[8];
 //начальные точки линий поля
 POINT3 PointB[1000];
 
+//добро пожаловать в ад
+
+//первый заряд
+double qForce1 = 3;
+POINT3 q1;
+
+//второй заряд
+double qForce2 = -1;
+POINT3 q2;
+
 //структура 3D-вектора
 struct VECTORS {
 	double x, y, z;
@@ -356,10 +366,10 @@ void LineCreate()
 {
 
 //размеры поля вывода в мировых координатах
-	xe1 = -3;  xe2 =   3; ye1 =  -3; ye2 =  3;
+	xe1 = -10;  xe2 =   10; ye1 =  -10; ye2 =  10;
 
 //длины координатных осей (в мировых координатах)
-	xmax=1.8, ymax=1.8, zmax=1.8;
+	xmax=4.8, ymax=4.8, zmax=4.8;
 
 //задаем вершины куба, связанного с подвижной системой координат
 	PointCorns();
@@ -375,36 +385,35 @@ void LineCreate()
 	Px[2] =  -ax;  Py[2] =  -ay;  Pz[2] =  az;
 	Px[3] =   ax;  Py[3] =  -ay;  Pz[3] =  -az;
 
+	q1.x = 0.1;
+	q1.y = 1;
+	q1.z = 1.5;
 
-//задаем начальные точки линий поля
-	int i, j, k, N = 4 ,  M = 4;
-	double x, y, dx = 2*ax/(N-1), dy = 2*ay/(M-1);
-	double d = 0.1;
+	q2.x = 0.0;
+	q2.y = 0.0;
+	q2.z = -1;
+	
 
-	double iz;
-	int Kz = 4;
-
-	for (iz = 0; iz <= Kz; iz++)
+	int i;
+	double Radius = 0.2;
+	for (i = 0; i < 20; i++)
 	{
+		double randomR = 2*Radius* (double)rand() / RAND_MAX - Radius;
+		double randomPhi = 2 * M_PI* (double)rand() / RAND_MAX;
+		double theta = asin(randomR / Radius);
+		PointB[i].x = Radius*cos(theta)*cos(randomPhi) + q1.x;
+		PointB[i].y = Radius*cos(theta)*sin(randomPhi) + q1.y;
+		PointB[i].z = randomR + q1.z;
+	}
 
-		d = az*0.2*(iz+1);
-
-		for (i = 0; i < N; i++)
-		{
-			x = -ax + dx*i;
-			for (j = 0; j < M; j++)
-			{
-				y = -ay + dy*j;
-				k = j + N * i + Kz*iz;
-				PointB[k].x = x;
-				PointB[k].y = y;
-				PointB[k].z = d;
-
-				PointB[k + 72].x = x;
-				PointB[k + 72].y = y;
-				PointB[k + 72].z = -d;
-			}
-		}
+	for (i = 20; i < 40; i++)
+	{
+		double randomR = 2 * Radius* (double)rand() / RAND_MAX - Radius;
+		double randomPhi = 2 * M_PI* (double)rand() / RAND_MAX;
+		double theta = asin(randomR / Radius);
+		PointB[i].x = Radius*cos(theta)*cos(randomPhi) + q2.x;
+		PointB[i].y = Radius*cos(theta)*sin(randomPhi) + q2.y;
+		PointB[i].z = randomR + q2.z;
 	}
 
 //начальные значения углов поворота системы координат
@@ -430,28 +439,37 @@ void	PointCorns()
 VECMAG magn(double x, double y, double z)
 {
 	VECMAG mag;
-	
-	double qForce = -1;
-	POINT3 q;
-	q.x = 1;
-	q.y = 1;
-	q.z = 1;
 
-
-	double deltaX = x - q.x;
-	double deltaY = y - q.y;
-	double deltaZ = z - q.z;
+	double deltaX = x - q1.x;
+	double deltaY = y - q1.y;
+	double deltaZ = z - q1.z;
 
 	double znamenatelPartOne = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
-	double znamentelPartTwo = sqrt(znamenatelPartOne);
-	double znamenatel = znamentelPartTwo*znamentelPartTwo*znamentelPartTwo;
+	double znamentelPartTwo = znamenatelPartOne*znamenatelPartOne*znamenatelPartOne;
+	double znamenatel = sqrt(znamentelPartTwo);
 
 	mag.hx =
-			 (deltaX/znamenatel)*qForce;
+			 (deltaX/znamenatel)*qForce1;
 	mag.hy =
-		(deltaY / znamenatel)*qForce;
+		(deltaY / znamenatel)*qForce1;
 	mag.hz =
-		(deltaZ / znamenatel)*qForce;
+		(deltaZ / znamenatel)*qForce1;
+
+	///
+	deltaX = x - q2.x;
+	deltaY = y - q2.y;
+	deltaZ = z - q2.z;
+
+	znamenatelPartOne = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
+	znamentelPartTwo = znamenatelPartOne*znamenatelPartOne*znamenatelPartOne;
+	znamenatel = sqrt(znamentelPartTwo);
+
+	mag.hx +=
+		(deltaX / znamenatel)*qForce2;
+	mag.hy +=
+		(deltaY / znamenatel)*qForce2;
+	mag.hz +=
+		(deltaZ / znamenatel)*qForce2;
 
 	return mag;
 }
@@ -533,7 +551,7 @@ void arrowVector(HDC hdc, int x1, int y1, int x2, int y2,double ze, COLORREF rgb
 
 //"рисует" одну линию поля из начальной точки PointB 
 //с помощью функций работающих с Z-буфером
-void LineField(HDC hdc,POINT3 PointB,COLORREF rgb)
+void LineField(HDC hdc,POINT3 PointB,COLORREF rgb, double force)
 {
 
 	VECTORS vect;	
@@ -546,7 +564,7 @@ void LineField(HDC hdc,POINT3 PointB,COLORREF rgb)
 	//координаты пикселов
 	int x1,y1,x2,y2;
 
-	double dt = 0.1; //длина шага на линии поля
+	double dt = force > 0 ? 0.1 : -0.1; //длина шага на линии поля
 	double x, y, z, Hx, Hy, Hz, Ha;
 	int k = 0;
 
@@ -604,7 +622,8 @@ void LineField(HDC hdc,POINT3 PointB,COLORREF rgb)
 		}
 
 	//прекращаем рисовать линию поля на границе куба
-	}while(step < 100 && (x>-xmax)&&(x<xmax)&&(y>-ymax)&&(y<ymax)&&(z>-zmax)&&(z<zmax));
+	} while (step<1000&&(x>-xmax) && (x<xmax) && (y>-ymax) && (y<ymax) && (z>-zmax) && (z<zmax) && ((abs(x - q1.x) > 0.01) || (abs(y - q1.y) > 0.01) || (abs(z - q1.z) > 0.01))
+		&& ((abs(x - q2.x) > 0.01) || (abs(y - q2.y) > 0.01) || (abs(z - q2.z) > 0.01)));
 }
 
 
@@ -734,18 +753,18 @@ void LinePicture(HWND hwnd, int Context)
 
 //"рисуем" линии поля заполняя Z-буфер
 //----------------------------------------------------------------
-	for(int i=0; i<1000; i++)
+	for (int i = 0; i < 20; i++)
 	{
-		LineField(hdc,PointB[i],RGB(255,0,0));
+		LineField(hdc,PointB[i],RGB(255,0,0),1);
 		
 	}
-	/*
-	for(int i=72; i<144; i++)
+	
+	for(int i=20; i<40; i++)
 	{
-		LineField(hdc,PointB[i],RGB(0,0,255));
+		LineField(hdc,PointB[i],RGB(0,0,255), -1);
 		
 	}
-	*/
+	
 //-----------------------------------------------------------------------
 
 
@@ -1058,7 +1077,7 @@ double ZPalet(double z)
 {
 	double a,b,f;
 	a = -2.0*xmax - dCentral;
-	b = 0.5*xmax - dCentral;
+	b = 1*xmax - dCentral;
 
 	if(z < a)
 		f = 0;
