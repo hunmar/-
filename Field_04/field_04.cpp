@@ -485,22 +485,24 @@ void LineDestroy()
 //угловые коэффициенты поворота системы координат
 double sf,cf,st,ct;
 
+double dCentral = 4;
+double cCentral = 8;
+
 //переход из мировой системы координат в видовую
 //отрографическое проектирование
-inline double Xe(double x,double y)
+inline double Xe(double x, double y, double z)
 {
-  return -sf*x+cf*y;
+	double u = (dCentral + cCentral - (st*cf*x + st*sf*y + ct*z)) / cCentral;
+	return (-sf*x + cf*y) / u;
 }
 
 //переход из мировой системы координат в видовую
 // отрографическое проектирование
 inline double Ye(double x,double y,double z)
 {
-  return -ct*cf*x-ct*sf*y+st*z;
+	double u = (dCentral + cCentral - (st*cf*x + st*sf*y + ct*z)) / cCentral;
+	return (-ct*cf*x - ct*sf*y + st*z) / u;
 }
-
-double dCentral = 4;
-
 
 //переход из мировой системы координат в видовую
 //отрографическое проектирование
@@ -594,13 +596,13 @@ void LineField(HDC hdc,POINT3 PointB,COLORREF rgb, double force)
 		yt2 = yt1 + vect.dy*dt;
 		zt2 = zt1 + vect.dz*dt;
 
-		xe=Xe(xt1,yt1);
+		xe = Xe(xt1, yt1, zt1);
 		ye=Ye(xt1,yt1,zt1);
 		ze1=Ze(xt1,yt1,zt1);
 		x1=xn(xe);
 		y1=ym(ye);
 
-		xe=Xe(xt2,yt2);
+		xe = Xe(xt2, yt2, zt1);
 		ye=Ye(xt2,yt2,zt2);
 		ze2=Ze(xt2,yt2,zt2);
 		x2=xn(xe);
@@ -738,7 +740,7 @@ void LinePicture(HWND hwnd, int Context)
 	for(int n=0; n<4; n++)
 	{
 		xt1 = Px[n]; yt1 = Py[n]; zt1 = Pz[n];
-		xe=Xe(xt1,yt1);
+		xe = Xe(xt1, yt1, zt1);
 		ye=Ye(xt1,yt1,zt1);
 		ze1=Ze(xt1,yt1,zt1);
 		x1=xn(xe);
@@ -793,11 +795,11 @@ void LinePicture(HWND hwnd, int Context)
 	int x2,y2;
 
 //ось Ox
-	xe=Xe(-xmax/3,0);
+	xe=Xe(-xmax/3,0,0);
 	ye=Ye(-xmax/3,0,0);
 	x1=xn(xe);
 	y1=ym(ye);
-	xe=Xe(xmax,0);
+	xe=Xe(xmax,0,0);
 	ye=Ye(xmax,0,0);
 	x2=xn(xe);
 	y2=ym(ye);
@@ -810,11 +812,11 @@ void LinePicture(HWND hwnd, int Context)
 	TextOut(hdc,x2, y2, _T("X"),1);
 
 //Ось Oy
-	xe=Xe(0,-ymax/3);
+	xe=Xe(0,-ymax/3, 0);
 	ye=Ye(0,-ymax/3,0);
 	x1=xn(xe);
 	y1=ym(ye);
-	xe=Xe(0,ymax);
+	xe=Xe(0,ymax, 0);
 	ye=Ye(0,ymax,0);
 	x2=xn(xe);
 	y2=ym(ye);
@@ -827,11 +829,11 @@ void LinePicture(HWND hwnd, int Context)
 	TextOut(hdc,x2, y2, _T("Y"),1);
 
 //Ось Oz
-	xe=Xe(0,0);
+	xe=Xe(0,0, 0);
 	ye=Ye(0,0,-zmax/3);
 	x1=xn(xe);
 	y1=ym(ye);
-	xe=Xe(0,0);
+	xe=Xe(0,0, 0);
 	ye=Ye(0,0,zmax);
 	x2=xn(xe);
 	y2=ym(ye);
@@ -990,12 +992,12 @@ void DrawBox(HWND hwnd, HDC hdc, ANGLS an)
 		xt1 = Point[i].x; yt1 = Point[i].y; zt1 = Point[i].z;
 		xt2 = Point[j].x; yt2 = Point[j].y; zt2 = Point[j].z;
 
-		xe=Xe(xt1,yt1);
+		xe = Xe(xt1, yt1, zt1);
 		ye=Ye(xt1,yt1,zt1);
 		x1=xn(xe);
 		y1=ym(ye);
 
-		xe=Xe(xt2,yt2);
+		xe = Xe(xt2, yt2, zt2);
 		ye=Ye(xt2,yt2,zt2);
 		x2=xn(xe);
 		y2=ym(ye);
@@ -1014,12 +1016,12 @@ void DrawBox(HWND hwnd, HDC hdc, ANGLS an)
 		xt1 = Point[i].x; yt1 = Point[i].y; zt1 = Point[i].z;
 		xt2 = Point[j].x; yt2 = Point[j].y; zt2 = Point[j].z;
 
-		xe=Xe(xt1,yt1);
+		xe = Xe(xt1, yt1, zt1);
 		ye=Ye(xt1,yt1,zt1);
 		x1=xn(xe);
 		y1=ym(ye);
 
-		xe=Xe(xt2,yt2);
+		xe = Xe(xt2, yt2, zt2);
 		ye=Ye(xt2,yt2,zt2);
 		x2=xn(xe);
 		y2=ym(ye);
@@ -1033,12 +1035,12 @@ void DrawBox(HWND hwnd, HDC hdc, ANGLS an)
 		xt1 =   Point[i].x; yt1 =   Point[i].y; zt1 =   Point[i].z;
 		xt2 = Point[i+4].x; yt2 = Point[i+4].y; zt2 = Point[i+4].z;
 
-		xe=Xe(xt1,yt1);
+		xe = Xe(xt1, yt1, zt1);
 		ye=Ye(xt1,yt1,zt1);
 		x1=xn(xe);
 		y1=ym(ye);
 
-		xe=Xe(xt2,yt2);
+		xe = Xe(xt2, yt2, zt2);
 		ye=Ye(xt2,yt2,zt2);
 		x2=xn(xe);
 		y2=ym(ye);
@@ -1053,12 +1055,12 @@ void DrawBox(HWND hwnd, HDC hdc, ANGLS an)
 		xt1 =   Point[i].x; yt1 =   Point[i].y; zt1 =   Point[i].z;
 		xt2 = Point[i+2].x; yt2 = Point[i+2].y; zt2 = Point[i+2].z;
 
-		xe=Xe(xt1,yt1);
+		xe = Xe(xt1, yt1, zt1);
 		ye=Ye(xt1,yt1,zt1);
 		x1=xn(xe);
 		y1=ym(ye);
 
-		xe=Xe(xt2,yt2);
+		xe = Xe(xt2, yt2, zt2);
 		ye=Ye(xt2,yt2,zt2);
 		x2=xn(xe);
 		y2=ym(ye);
